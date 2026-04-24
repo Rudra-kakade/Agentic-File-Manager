@@ -1,0 +1,50 @@
+{
+  "name": "sentinelai-ui",
+  "version": "1.0.0",
+  "description": "SentinelAI — local AI file intelligence agent",
+  "main": "electron-main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev":   "NODE_ENV=development electron . --inspect=5858",
+    "pack":  "electron-builder --dir",
+    "dist":  "electron-builder",
+    "test":  "jest tests/"
+  },
+  "build": {
+    "appId": "ai.sentinel.app",
+    "productName": "SentinelAI",
+    "copyright": "Copyright © 2026",
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Utility",
+      "mimeTypes": []
+    },
+    "mac": {
+      "target": "dmg",
+      "hardenedRuntime": true,
+      "entitlements": "assets/entitlements.mac.plist"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "files": [
+      "index.html",
+      "electron-main.js",
+      "electron-preload.js",
+      "sentinel-ipc-client.js",
+      "assets/**"
+    ],
+    "extraResources": []
+  },
+  "dependencies": {
+    "electron": "^30.0.0"
+  },
+  "devDependencies": {
+    "electron-builder": "^24.0.0",
+    "jest": "^29.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": ["**/tests/**/*.test.js"]
+  }
+}

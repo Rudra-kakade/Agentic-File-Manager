@@ -1,0 +1,62 @@
+[Unit]
+Description=SentinelAI Query Translation Server (Llama-3 8B)
+Documentation=https://github.com/your-org/sentinelai
+
+# Must start after the embedding engine so we can embed semantic queries.
+After=sentinel-embedding.service
+Requires=sentinel-embedding.service
+
+# Also needs the vector store (indirectly via embedding), but we express the
+# direct dependency to ensure the full stack is up before we accept queries.
+After=sentinel-vectorstore.service
+
+[Service]
+Type=simple
+User=sentinel
+Group=sentinel
+
+# ── Model path and tuning ──────────────────────────────────────────────────
+EnvironmentFile=/etc/sentinel/sentinel.env
+
+# The query server loads the 8B model at startup via mmap.
+# The model is ~4.5 GB on disk but only the accessed pages are loaded into RAM,
+# so the true RSS at idle is far less.  We budget 6 GB to cover the model pages
+# that are actually faulted in during inference plus Python overhead.
+MemoryMax=6G
+
+# Soft CPU limit: we don't pin the process, but we lower its scheduling
+# priority so active user work is never starved by query translation.
+Nice=10
+CPUSchedulingPolicy=batch
+
+# ── Process ────────────────────────────────────────────────────────────────
+ExecStart=/usr/bin/python3 -m sentinel_query.server
+WorkingDirectory=/opt/sentinel/query
+
+# Restart on failure with a 5-second delay.  The model load takes a few
+# seconds so we don't want rapid restart loops.
+Restart=on-failure
+RestartSec=5
+
+# ── Security hardening ─────────────────────────────────────────────────────
+# The query server never writes to the filesystem itself.
+ReadOnlyPaths=/
+ReadWritePaths=/run/sentinel /var/sentinel/state
+
+# No new privileges — the service runs as the unprivileged `sentinel` user.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+# Allow access to the GGUF model on the read-only path above.
+# The model file lives at /var/sentinel/models/ which is covered by ReadOnlyPaths.
+
+# ── Timeouts ───────────────────────────────────────────────────────────────
+# Give the model up to 60 seconds to load before systemd considers the start
+# failed.  On a cold filesystem cache (first boot) mmap may be slow.
+TimeoutStartSec=60
+TimeoutStopSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,34 @@
+# /etc/systemd/system/sentinel-embedding.service
+[Unit]
+Description=SentinelAI Embedding Engine (MiniLM ONNX)
+After=local-fs.target sentinel-vectorstore.service
+Requires=sentinel-vectorstore.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/sentinel-embedding
+Restart=on-failure
+RestartSec=5s
+User=sentinel
+
+Environment=SENTINEL_LOG_LEVEL=INFO
+Environment=SENTINEL_MODEL_PATH=/var/sentinel/models/minilm
+Environment=SENTINEL_EMBEDDING_SOCKET=/run/sentinel/embedding.sock
+Environment=SENTINEL_VECTORSTORE_SOCKET=/run/sentinel/vectorstore.sock
+Environment=SENTINEL_BATCH_SIZE=32
+Environment=SENTINEL_BATCH_TIMEOUT_S=1.0
+Environment=SENTINEL_INFERENCE_THREADS=4
+
+RuntimeDirectory=sentinel
+StateDirectory=sentinel/models
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sentinel-embedding
+
+# ONNX + model weights ~200 MB; allow headroom for batch buffers
+MemoryMax=512M
+LimitNOFILE=4096
+
+[Install]
+WantedBy=multi-user.target

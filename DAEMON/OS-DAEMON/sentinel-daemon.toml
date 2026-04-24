@@ -1,0 +1,21 @@
+# sentinel-daemon.toml
+# Default configuration — copy to /etc/sentinel/daemon.toml for production.
+
+# Paths to monitor.
+# Use mount-point roots for fanotify (it marks entire mounts).
+watch_paths = ["/home", "/var/projects"]
+
+# Kùzu graph database directory
+graph_db_path = "/var/sentinel/graph"
+
+# Tantivy BM25 index directory
+tantivy_index_path = "/var/sentinel/tantivy"
+
+# Unix domain socket — query engine connects here
+ipc_socket_path = "/run/sentinel/daemon.sock"
+
+# Pause background embedding when system CPU exceeds this %
+cpu_threshold_pct = 15.0
+
+# Depth of the in-memory indexing queue (tasks)
+index_queue_depth = 1024

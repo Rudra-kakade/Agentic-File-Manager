@@ -1,0 +1,18 @@
+# sentinel-query runtime dependencies
+#
+# llama-cpp-python: Llama-3 8B GGUF inference + grammar-constrained generation.
+# Install without GPU support (CPU only):
+#   pip install llama-cpp-python --break-system-packages
+#
+# To build with cuBLAS GPU support (not required — sentinel-query is CPU-first):
+#   CMAKE_ARGS="-DLLAMA_CUBLAS=on" pip install llama-cpp-python
+#
+# Minimum version requires GBNF grammar support (>=0.2.11).
+llama-cpp-python>=0.2.11
+
+# One-time model download (can be removed after installation)
+huggingface-hub>=0.21.0
+
+# ── dev / test dependencies (not needed at runtime) ──────────────────────────
+# pytest>=8.0
+# pytest-asyncio>=0.23

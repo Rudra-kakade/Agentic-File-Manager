@@ -1,0 +1,47 @@
+[build-system]
+requires      = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name        = "sentinel-embedding"
+version     = "0.1.0"
+description = "SentinelAI embedding engine and vector store"
+requires-python = ">=3.10"
+
+dependencies = [
+    # ONNX Runtime — CPU build (~10MB, no torch dependency at runtime)
+    "onnxruntime>=1.17.0",
+    # HuggingFace fast tokenizer (Rust-backed, very fast)
+    "tokenizers>=0.19.0",
+    # Vector store
+    "hnswlib>=0.8.0",
+    # Numerics
+    "numpy>=1.26.0",
+]
+
+[project.optional-dependencies]
+# Required only for the one-time model download/export step
+download = [
+    "torch>=2.2",
+    "transformers>=4.39",
+    "optimum[exporters]>=1.18",
+    "sentencepiece",
+]
+# Development / testing
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+]
+
+[project.scripts]
+sentinel-embedding   = "src.engine:main"
+sentinel-vectorstore = "src.vector_store:main"
+sentinel-download    = "scripts.download_model:main"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths    = ["tests"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*", "scripts*"]

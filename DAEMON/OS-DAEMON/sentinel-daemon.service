@@ -1,0 +1,35 @@
+[Unit]
+Description=SentinelAI OS Event Daemon
+Documentation=https://github.com/your-org/sentinel
+After=local-fs.target
+Wants=local-fs.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/sentinel-daemon
+Restart=on-failure
+RestartSec=5s
+
+# Run as root for CAP_SYS_ADMIN (fanotify requirement)
+# Alternative: run as dedicated user + setcap
+User=root
+
+# Filesystem isolation — daemon only needs /home, /var/sentinel, /proc, /run
+# ProtectSystem=strict  # enable after testing
+# PrivateTmp=true
+
+# Logging via journald
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sentinel-daemon
+
+# Environment
+Environment=RUST_LOG=info
+EnvironmentFile=-/etc/sentinel/env
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=512
+
+[Install]
+WantedBy=multi-user.target

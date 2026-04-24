@@ -1,0 +1,32 @@
+# /etc/systemd/system/sentinel-vectorstore.service
+[Unit]
+Description=SentinelAI Vector Store (hnswlib)
+After=local-fs.target
+Before=sentinel-embedding.service sentinel-daemon.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/sentinel-vectorstore
+Restart=on-failure
+RestartSec=5s
+User=sentinel
+
+Environment=SENTINEL_LOG_LEVEL=INFO
+Environment=SENTINEL_VECTORSTORE_PATH=/var/sentinel/vectorstore
+Environment=SENTINEL_VECTORSTORE_SOCKET=/run/sentinel/vectorstore.sock
+Environment=SENTINEL_VECTORSTORE_MAX_EL=2000000
+Environment=SENTINEL_VECTORSTORE_PERSIST_S=60
+
+RuntimeDirectory=sentinel
+StateDirectory=sentinel/vectorstore
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sentinel-vectorstore
+
+# Memory limit — hnswlib for 1M vecs at dim=384 ≈ 1.5 GB
+MemoryMax=2G
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,4 @@
+[build]
+# Redirect build artifacts to a Linux-native path to avoid 'Permission denied' errors 
+# when compiling on a Windows mount (/mnt/c) from within WSL.
+target-dir = "/tmp/sentinel_target"

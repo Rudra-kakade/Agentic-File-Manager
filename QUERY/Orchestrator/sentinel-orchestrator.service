@@ -1,0 +1,52 @@
+[Unit]
+Description=SentinelAI Orchestrator (Hybrid Retrieval Pipeline)
+Documentation=https://github.com/your-org/sentinelai
+
+# The orchestrator is the top-level query service.  It depends on all three
+# infrastructure services being up before it can serve any query.
+After=sentinel-daemon.service sentinel-embedding.service sentinel-vectorstore.service
+Requires=sentinel-daemon.service sentinel-embedding.service sentinel-vectorstore.service
+
+[Service]
+Type=simple
+User=sentinel
+Group=sentinel
+
+EnvironmentFile=/etc/sentinel/sentinel.env
+
+# Memory budget:
+#   Llama-3 8B Q4_K_M model (mmap, pages faulted in on demand): ~1-4 GB active
+#   Python + asyncio overhead:                                     ~100 MB
+#   In-flight query buffers:                                       ~50 MB
+# We cap at 6 GB; the OS evicts mmap pages freely under pressure.
+MemoryMax=6G
+
+# Lower scheduling priority — user's active apps take precedence.
+Nice=10
+CPUSchedulingPolicy=batch
+
+ExecStart=/usr/bin/python3 -m sentinel_query.orchestrator_server
+
+WorkingDirectory=/opt/sentinel/query
+
+Restart=on-failure
+RestartSec=5
+
+# ── Security ──────────────────────────────────────────────────────────────
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+
+# Needs read access to the GGUF model and sentinel state dirs.
+ReadOnlyPaths=/var/sentinel/models
+ReadWritePaths=/run/sentinel /var/sentinel/state
+
+# ── Timeouts ──────────────────────────────────────────────────────────────
+# Model loading + connecting to 3 downstream services can take up to 90s
+# on a cold filesystem cache.
+TimeoutStartSec=90
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target

@@ -1,6 +1,6 @@
 [build-system]
 requires      = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.backends.legacy:build"
+build-backend = "setuptools.build_meta"
 
 [project]
 name        = "sentinel-embedding"
@@ -34,9 +34,9 @@ dev = [
 ]
 
 [project.scripts]
-sentinel-embedding   = "src.engine:main"
-sentinel-vectorstore = "src.vector_store:main"
-sentinel-download    = "scripts.download_model:main"
+sentinel-embedding   = "engine:main"
+sentinel-vectorstore = "vector_store:main"
+sentinel-download    = "download_model:main"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -45,3 +45,6 @@ testpaths    = ["tests"]
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["src*", "scripts*"]
+
+[ignore]
+~/.rustup

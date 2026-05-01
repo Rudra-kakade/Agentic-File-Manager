@@ -48,7 +48,7 @@ import time
 from typing import Optional
 
 from .config import QueryConfig
-from .ipc_client import DaemonClient, EmbeddingClient, VectorStoreClient
+from LLM.ipc_client import DaemonClient, EmbeddingClient, VectorStoreClient
 from .result import (
     ResultSet,
     SearchResult,
@@ -58,7 +58,7 @@ from .result import (
     normalise_bm25_scores,
     normalise_vector_scores,
 )
-from .translator import GraphQuery, QueryTranslator, StructuredQuery
+from LLM.translator import GraphQuery, QueryTranslator, StructuredQuery
 
 logger = logging.getLogger(__name__)
 

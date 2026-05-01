@@ -49,7 +49,7 @@ import time
 from dataclasses import asdict, dataclass
 from typing import Optional
 
-from .config import ModelConfig
+from Orchestrator.config import ModelConfig
 from .grammar import EXAMPLE_OUTPUT, EXAMPLE_OUTPUT_NO_CONSTRAINTS, get_grammar
 from .time_parser import format_ts_for_prompt, parse_time_expression, validate_range
 
@@ -212,8 +212,7 @@ class QueryTranslator:
             use_mlock=self._config.use_mlock,
             verbose=False,
         )
-
-        self._grammar = LlamaGrammar.from_string(get_grammar())
+        # self._grammar = LlamaGrammar.from_string(get_grammar())
 
         elapsed = time.monotonic() - t0
         logger.info("Model loaded in %.1f s (mmap=True, RAM impact minimal)", elapsed)
@@ -294,11 +293,10 @@ class QueryTranslator:
     def _infer(self, messages: list[dict]) -> str:
         """Blocking inference; run in executor so it doesn't block the loop."""
         assert self._llm is not None
-        assert self._grammar is not None
 
         response = self._llm.create_chat_completion(
             messages=messages,
-            grammar=self._grammar,
+            # grammar=self._grammar,
             max_tokens=self._config.max_tokens,
             temperature=self._config.temperature,
             stop=["\n\n"],      # belt-and-suspenders; grammar already limits output

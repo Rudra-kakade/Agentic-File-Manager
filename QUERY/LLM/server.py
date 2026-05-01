@@ -37,7 +37,7 @@ import struct
 import time
 from typing import Optional
 
-from .config import QueryConfig
+from Orchestrator.config import QueryConfig
 from .ipc_client import EmbeddingClient
 from .translator import QueryTranslator
 

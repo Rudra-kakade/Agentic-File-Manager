@@ -6,7 +6,7 @@ Before=sentinel-embedding.service sentinel-daemon.service
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/sentinel-vectorstore
+ExecStart=/opt/sentinel/embedding/venv/bin/sentinel-vectorstore
 Restart=on-failure
 RestartSec=5s
 User=sentinel

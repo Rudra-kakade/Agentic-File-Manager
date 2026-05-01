@@ -228,12 +228,19 @@ create_user() {
 create_directories() {
     section "Creating runtime directories"
 
+    # Persist /run/sentinel across reboots via tmpfiles.d
+    # Write this FIRST so systemd-tmpfiles won't clean it during setup
+    cat > /etc/tmpfiles.d/sentinel.conf << 'TMPFILES'
+# SentinelAI runtime directory — recreated on boot
+d /run/sentinel 0755 sentinel sentinel -
+TMPFILES
+    info "tmpfiles.d entry written"
+
     local DIRS=(
         "$DIR_VAR"
         "$DIR_STATE"
         "$DIR_MODELS"
         "$DIR_TRASH"
-        "$DIR_RUN"
         "$DIR_ETC"
         "$DIR_OPT_DAEMON"
         "$DIR_OPT_EMBED"
@@ -245,24 +252,18 @@ create_directories() {
         info "  $d"
     done
 
-    # Ownership: sentinel user owns its runtime and data directories
+    # /run/sentinel needs special handling: use install -d to atomically
+    # create + set ownership in one step (avoids WSL2 tmpfs race condition)
+    install -d -m 755 -o "$SENTINEL_USER" -g "$SENTINEL_GROUP" "$DIR_RUN"
+    info "  $DIR_RUN (install -d)"
+
+    # Ownership: sentinel user owns its data and opt directories
     chown -R "$SENTINEL_USER:$SENTINEL_GROUP" \
-        "$DIR_VAR" "$DIR_RUN" "$DIR_OPT"
+        "$DIR_VAR" "$DIR_OPT"
 
     # /etc/sentinel is root-owned but sentinel-readable (contains the env file)
     chown root:sentinel "$DIR_ETC"
     chmod 750 "$DIR_ETC"
-
-    # /run/sentinel: sentinel owns it (sockets created here)
-    chown "$SENTINEL_USER:$SENTINEL_GROUP" "$DIR_RUN"
-    chmod 755 "$DIR_RUN"
-
-    # Persist /run/sentinel across reboots via tmpfiles.d
-    cat > /etc/tmpfiles.d/sentinel.conf << 'TMPFILES'
-# SentinelAI runtime directory — recreated on boot
-d /run/sentinel 0755 sentinel sentinel -
-TMPFILES
-    info "tmpfiles.d entry written"
 }
 
 # ── Install Python services into virtualenvs ──────────────────────────────────
@@ -284,6 +285,9 @@ install_python_services() {
     # Copy sentinel-embedding source
     cp -r "$REPO_ROOT/embedding/"* "$DIR_OPT_EMBED/"
     chown -R "$SENTINEL_USER:$SENTINEL_GROUP" "$DIR_OPT_EMBED"
+    
+    # Install the package itself to generate the entrypoint scripts
+    "$EMBED_VENV/bin/pip" install -q "$DIR_OPT_EMBED"
 
     info "sentinel-embedding installed ✓"
     

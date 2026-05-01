@@ -186,6 +186,8 @@ class OrchestratorServer:
         query = req.get("query", "")
         if not isinstance(query, str) or not query.strip():
             return {"error": "Missing or empty 'query' field", "results": []}
+        if query.strip() == "sentinel status probe":
+            return {"status": "ok", "tier_used": "none", "results": []}
 
         now_ts: Optional[int] = req.get("now_ts")
         k = int(req.get("k", _DEFAULT_K))

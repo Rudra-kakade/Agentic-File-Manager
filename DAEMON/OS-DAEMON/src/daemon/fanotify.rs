@@ -57,10 +57,21 @@ pub async fn run(
 
     loop {
         tokio::select! {
-            Some(ev) = ev_rx.recv() => {
-                batch.push(ev);
-                if batch.len() >= 200 {
-                    flush(&mut batch, &graph, &index_tx).await;
+            res = ev_rx.recv() => {
+                match res {
+                    Some(ev) => {
+                        batch.push(ev);
+                        if batch.len() >= 200 {
+                            flush(&mut batch, &graph, &index_tx).await;
+                        }
+                    }
+                    None => {
+                        tracing::warn!("fanotify event stream closed. Parking task.");
+                        if !batch.is_empty() {
+                            flush(&mut batch, &graph, &index_tx).await;
+                        }
+                        std::future::pending::<()>().await;
+                    }
                 }
             }
             _ = interval.tick() => {

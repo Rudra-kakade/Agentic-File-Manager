@@ -6,7 +6,7 @@ Requires=sentinel-vectorstore.service
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/sentinel-embedding
+ExecStart=/opt/sentinel/embedding/venv/bin/sentinel-embedding
 Restart=on-failure
 RestartSec=5s
 User=sentinel

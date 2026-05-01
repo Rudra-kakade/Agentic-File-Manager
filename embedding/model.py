@@ -66,12 +66,15 @@ class EmbeddingModel:
         opts.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
         # Cache the optimised model so subsequent starts are faster
         opts.optimized_model_filepath = str(model_dir / "model_optimised.onnx")
+        available = ort.get_available_providers()
+        providers = []
+        if "CUDAExecutionProvider" in available:
+            providers.append("CUDAExecutionProvider")
+        providers.append("CPUExecutionProvider")
 
-        self._session = ort.InferenceSession(
-            str(onnx_path),
-            sess_options   = opts,
-            providers      = ["CPUExecutionProvider"],
-        )
+        self._session = ort.InferenceSession(onnx_path, providers=providers)
+        print(f"[embedding] using provider: {self.session.get_providers()[0]}")
+        
         log.info("ONNX session loaded: %s", onnx_path)
 
         # ── Tokeniser ─────────────────────────────────────────────────────────

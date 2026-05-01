@@ -58,6 +58,15 @@ async fn main() -> Result<()> {
     let graph_c  = graph.clone();
     let lexical_c = lexical.clone();
 
+    // ── Run bulk index (for WSL without fanotify) ─────────────────────────────
+    // Run this in a background task so it doesn't block IPC or fanotify
+    let bulk_watch = cfg.watch_paths.clone();
+    let bulk_tx = index_tx.clone();
+    tokio::spawn(async move {
+        run_bulk_index(bulk_watch, bulk_tx).await;
+    });
+
+
     // 1. fanotify listener — writes to graph + queues for embedding
     let fan_handle = tokio::spawn(daemon::fanotify::run(
         cfg.watch_paths.clone(),
@@ -70,7 +79,7 @@ async fn main() -> Result<()> {
         index_rx,
         governor,
         lexical_c,
-        cfg.ipc_socket_path.clone(),
+        cfg.embedding_socket_path.clone(),
     ));
 
     // 3. IPC command handler — serves query engine requests
@@ -117,6 +126,8 @@ mod config {
         pub tantivy_index_path: PathBuf,
         /// Unix socket path for IPC
         pub ipc_socket_path: PathBuf,
+        /// Unix socket path for embedding service
+        pub embedding_socket_path: PathBuf,
         /// CPU usage ceiling (0–100) before governor pauses embedding
         pub cpu_threshold_pct: f32,
         /// Depth of the in-memory indexing queue
@@ -132,6 +143,7 @@ mod config {
                 .set_default("cpu_threshold_pct", 15.0)?
                 .set_default("index_queue_depth", 1024)?
                 .set_default("ipc_socket_path", "/run/sentinel/daemon.sock")?
+                .set_default("embedding_socket_path", "/run/sentinel/embedding.sock")?
                 .set_default("graph_db_path", "/var/sentinel/graph")?
                 .set_default("tantivy_index_path", "/var/sentinel/tantivy")?
                 .set_default("watch_paths", vec!["/home"])?
@@ -240,4 +252,34 @@ mod tantivy_index {
             Ok(results)
         }
     }
+}
+
+async fn run_bulk_index(watch_paths: Vec<std::path::PathBuf>, tx: tokio::sync::mpsc::Sender<crate::daemon::IndexTask>) {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    use walkdir::WalkDir;
+    tracing::info!("Starting bulk index run on paths: {:?}", watch_paths);
+    let mut count = 0;
+    tokio::task::spawn_blocking(move || {
+        for root in watch_paths {
+            for entry in WalkDir::new(root).into_iter().filter_map(|e| e.ok()) {
+                if entry.file_type().is_file() {
+                    let path = entry.into_path();
+                    if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+                        let ext = ext.to_lowercase();
+                        if ["mp4", "mkv", "mp3", "jpg", "png", "zip", "tar", "gz", "exe", "dll", "so", "o", "a", "pyc", "class"].contains(&ext.as_str()) {
+                            continue;
+                        }
+                    }
+                    let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+                    let task = crate::daemon::IndexTask { path, timestamp };
+                    if let Err(e) = tx.blocking_send(task) {
+                        tracing::error!("Failed to send bulk index task: {}", e);
+                        break;
+                    }
+                    count += 1;
+                }
+            }
+        }
+        tracing::info!("Bulk index complete. Queued {} files.", count);
+    }).await.unwrap();
 }

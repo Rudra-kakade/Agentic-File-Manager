@@ -271,7 +271,31 @@ TMPFILES
 install_python_services() {
     section "Installing Python services"
 
-    # ── sentinel-embedding ────────────────────────────────────────────────
+    # ── sentinel-Query ────────────────────────────────────────────────
+    local QUERY_VENV="$DIR_OPT_QUERY/venv"
+
+    info "Creating venv: $QUERY_VENV"
+    python3 -m venv "$QUERY_VENV"
+    "$QUERY_VENV/bin/pip" install -q --upgrade pip
+    "$QUERY_VENV/bin/pip" install -q \
+        llama-cpp-python \
+        huggingface-hub
+
+    #copy sentinel_query source
+    cp -r "$REPO_ROOT/QUERY/"* "$DIR_OPT_QUERY/"
+    chown -R "$SENTINEL_USER:$SENTINEL_GROUP" "$DIR_OPT_QUERY"
+
+    # ← ADD THIS LINE (mirrors what embedding does)
+    "$QUERY_VENV/bin/pip" install -q "$DIR_OPT_QUERY"
+
+    local PY_VER
+    PY_VER=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+    echo "/opt/sentinel/query" \
+        > "$QUERY_VENV/lib/python${PY_VER}/site-packages/sentinel_query.pth"
+
+    info "sentinel-query installed ✓"
+    
+    # ── sentinel-Embedding ────────────────────────────────────────────────
     local EMBED_VENV="$DIR_OPT_EMBED/venv"
     info "Creating venv: $EMBED_VENV"
     python3 -m venv "$EMBED_VENV"

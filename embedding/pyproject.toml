@@ -46,5 +46,4 @@ testpaths    = ["tests"]
 where = ["."]
 include = ["src*", "scripts*"]
 
-[ignore]
-~/.rustup
+

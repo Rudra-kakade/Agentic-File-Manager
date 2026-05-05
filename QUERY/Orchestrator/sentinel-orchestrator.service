@@ -16,8 +16,7 @@ Environment=PYTHONPATH=/opt/sentinel/query
 WorkingDirectory=/opt/sentinel/query
 
 # Reset any inherited ExecStart, then set ours
-ExecStart=
-ExecStart=/opt/sentinel/query/venv/bin/python3 -m sentinel_query.orchestrator_server
+ExecStart=/opt/sentinel/query/venv/bin/python3 -m Orchestrator.orchestrator_server
 
 # Memory budget:
 #   Llama-3 8B Q4_K_M model (mmap, pages faulted in on demand): ~1-4 GB active

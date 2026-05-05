@@ -39,9 +39,9 @@ from typing import List, Optional
 
 import numpy as np
 
-from .model import EmbeddingModel
-from .vector_store_client import VectorStoreClient
-from .config import EngineConfig
+from model import EmbeddingModel
+from vector_store_client import VectorStoreClient
+from config import EngineConfig
 
 log = logging.getLogger("sentinel.engine")
 

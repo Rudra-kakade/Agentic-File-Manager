@@ -544,7 +544,7 @@ run_smoke_test() {
         return
     fi
 
-    local TEST_FILE="/tmp/sentinel_smoke_test_$(date +%s).txt"
+    local TEST_FILE="$HOME/.sentinel_smoke_$(date +%s).txt"
     local TEST_CONTENT="sentinel smoke test unique identifier alpha bravo charlie"
     local SOCKET="/run/sentinel/orchestrator.sock"
     local MAX_WAIT=30
@@ -715,7 +715,7 @@ def query(text):
     s.close()
     return json.loads(data)
 r = query('find my report from last week')
-for f in r['results']: print(f['score']:.2f, f['path'])
+for f in r['results']: print(f"{f['score']:.2f}", f['path'])
 EOF
 QUERY_EXAMPLE
     echo ""

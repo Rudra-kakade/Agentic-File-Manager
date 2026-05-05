@@ -23,6 +23,11 @@ impl IpcServer {
         // Remove stale socket if it exists
         let _ = std::fs::remove_file(path);
         let listener = UnixListener::bind(path)?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let _ = std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o666));
+        }
         info!(path = ?path, "IPC socket bound");
         Ok(Self { listener })
     }

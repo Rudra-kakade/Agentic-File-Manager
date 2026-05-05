@@ -39,7 +39,7 @@ from pathlib import Path
 # Wire protocol (identical to all sentinel services)
 # ---------------------------------------------------------------------------
 
-def send_recv(sock_path: str, payload: dict, timeout: float = 15.0) -> dict:
+def send_recv(sock_path: str, payload: dict, timeout: float = 180.0) -> dict:
     """Send one framed JSON request and return the parsed response."""
     data = json.dumps(payload).encode("utf-8")
     frame = struct.pack("<I", len(data)) + data

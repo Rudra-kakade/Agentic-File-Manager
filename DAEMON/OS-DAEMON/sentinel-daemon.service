@@ -6,13 +6,14 @@ Wants=local-fs.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/sentinel-daemon
+ExecStart=/usr/local/bin/sentinel-daemon
 Restart=on-failure
 RestartSec=5s
 
 # Run as root for CAP_SYS_ADMIN (fanotify requirement)
 # Alternative: run as dedicated user + setcap
 User=root
+UMask=000
 
 # Filesystem isolation — daemon only needs /home, /var/sentinel, /proc, /run
 # ProtectSystem=strict  # enable after testing

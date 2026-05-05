@@ -42,9 +42,7 @@ sentinel-download    = "download_model:main"
 asyncio_mode = "auto"
 testpaths    = ["tests"]
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["src*", "scripts*"]
+[tool.setuptools]
+py-modules = ["engine", "config", "model", "vector_store", "vector_store_client", "download_model", "test_pipeline"]
 
-[ignore]
-~/.rustup
+

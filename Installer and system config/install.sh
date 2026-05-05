@@ -271,8 +271,33 @@ TMPFILES
 install_python_services() {
     section "Installing Python services"
 
-    # ── sentinel-embedding ────────────────────────────────────────────────
+    # ── sentinel-Query ────────────────────────────────────────────────
+    local QUERY_VENV="$DIR_OPT_QUERY/venv"
+
+    info "Creating venv: $QUERY_VENV"
+    python3 -m venv "$QUERY_VENV"
+    "$QUERY_VENV/bin/pip" install -q --upgrade pip
+    "$QUERY_VENV/bin/pip" install -q \
+        llama-cpp-python \
+        huggingface-hub
+
+    #copy sentinel_query source
+    cp -r "$REPO_ROOT/QUERY/"* "$DIR_OPT_QUERY/"
+    chown -R "$SENTINEL_USER:$SENTINEL_GROUP" "$DIR_OPT_QUERY"
+
+    # ← ADD THIS LINE (mirrors what embedding does)
+    "$QUERY_VENV/bin/pip" install -q "$DIR_OPT_QUERY"
+
+    local PY_VER
+    PY_VER=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+    echo "/opt/sentinel/query" \
+        > "$QUERY_VENV/lib/python${PY_VER}/site-packages/sentinel_query.pth"
+
+    info "sentinel-query installed ✓"
+    
+    # ── sentinel-Embedding ────────────────────────────────────────────────
     local EMBED_VENV="$DIR_OPT_EMBED/venv"
+
     info "Creating venv: $EMBED_VENV"
     python3 -m venv "$EMBED_VENV"
     "$EMBED_VENV/bin/pip" install -q --upgrade pip
@@ -285,12 +310,17 @@ install_python_services() {
     # Copy sentinel-embedding source
     cp -r "$REPO_ROOT/embedding/"* "$DIR_OPT_EMBED/"
     chown -R "$SENTINEL_USER:$SENTINEL_GROUP" "$DIR_OPT_EMBED"
-    
+
     # Install the package itself to generate the entrypoint scripts
     "$EMBED_VENV/bin/pip" install -q "$DIR_OPT_EMBED"
 
+    local PY_VER
+    PY_VER=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+    echo "/opt/sentinel/embedding" \
+        > "$EMBED_VENV/lib/python${PY_VER}/site-packages/sentinel_embedding.pth"
+
     info "sentinel-embedding installed ✓"
-    
+
     # ── Prepare embedding model (MiniLM) ──────────────────────────────────
     info "Preparing embedding model (MiniLM) …"
     "$EMBED_VENV/bin/python3" "$DIR_OPT_EMBED/download_model.py" \
@@ -299,17 +329,8 @@ install_python_services() {
     info "Embedding model ready ✓"
 
     # ── sentinel-query (translator + orchestrator) ────────────────────────
-    local QUERY_VENV="$DIR_OPT_QUERY/venv"
-    info "Creating venv: $QUERY_VENV"
-    python3 -m venv "$QUERY_VENV"
-    "$QUERY_VENV/bin/pip" install -q --upgrade pip
-    "$QUERY_VENV/bin/pip" install -q \
-        llama-cpp-python \
-        huggingface-hub
+    echo "/opt/sentinel/query" > "$QUERY_VENV/lib/python$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')/site-packages/sentinel_query.pth"
 
-    # Copy sentinel-query source
-    cp -r "$REPO_ROOT/QUERY/"* "$DIR_OPT_QUERY/"
-    chown -R "$SENTINEL_USER:$SENTINEL_GROUP" "$DIR_OPT_QUERY"
 
     info "sentinel-query installed ✓"
 }
@@ -523,7 +544,7 @@ run_smoke_test() {
         return
     fi
 
-    local TEST_FILE="/tmp/sentinel_smoke_test_$(date +%s).txt"
+    local TEST_FILE="$HOME/.sentinel_smoke_$(date +%s).txt"
     local TEST_CONTENT="sentinel smoke test unique identifier alpha bravo charlie"
     local SOCKET="/run/sentinel/orchestrator.sock"
     local MAX_WAIT=30
@@ -694,7 +715,7 @@ def query(text):
     s.close()
     return json.loads(data)
 r = query('find my report from last week')
-for f in r['results']: print(f['score']:.2f, f['path'])
+for f in r['results']: print(f"{f['score']:.2f}", f['path'])
 EOF
 QUERY_EXAMPLE
     echo ""

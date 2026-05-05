@@ -51,7 +51,7 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 import hnswlib
 
-from .config import VectorStoreConfig
+from config import VectorStoreConfig
 
 log = logging.getLogger("sentinel.vectorstore")
 

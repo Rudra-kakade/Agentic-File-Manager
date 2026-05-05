@@ -11,8 +11,12 @@ Requires=sentinel-daemon.service sentinel-embedding.service sentinel-vectorstore
 Type=simple
 User=sentinel
 Group=sentinel
-
 EnvironmentFile=/etc/sentinel/sentinel.env
+Environment=PYTHONPATH=/opt/sentinel/query
+WorkingDirectory=/opt/sentinel/query
+
+# Reset any inherited ExecStart, then set ours
+ExecStart=/opt/sentinel/query/venv/bin/python3 -m Orchestrator.orchestrator_server
 
 # Memory budget:
 #   Llama-3 8B Q4_K_M model (mmap, pages faulted in on demand): ~1-4 GB active
@@ -24,10 +28,6 @@ MemoryMax=6G
 # Lower scheduling priority — user's active apps take precedence.
 Nice=10
 CPUSchedulingPolicy=batch
-
-ExecStart=/usr/bin/python3 -m sentinel_query.orchestrator_server
-
-WorkingDirectory=/opt/sentinel/query
 
 Restart=on-failure
 RestartSec=5
